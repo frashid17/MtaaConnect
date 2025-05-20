@@ -1,11 +1,11 @@
-import { initializeApp, getApps } from "firebase/app";
+import { initializeApp } from "firebase/app";
 import { 
   getAuth, 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
   signOut as firebaseSignOut,
   GoogleAuthProvider,
-  signInWithRedirect,
+  signInWithPopup,
   onAuthStateChanged,
   updateProfile,
   User
@@ -23,14 +23,8 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-let app;
-if (!getApps().length) {
-  app = initializeApp(firebaseConfig);
-} else {
-  app = getApps()[0];
-}
-
-const auth = getAuth(app);
+const app = initializeApp(firebaseConfig);
+const auth = getAuth();
 const storage = getStorage(app);
 const db = getFirestore(app);
 const googleProvider = new GoogleAuthProvider();
@@ -45,7 +39,7 @@ export const createUserWithEmail = (email: string, password: string) => {
 };
 
 export const signInWithGoogle = () => {
-  return signInWithRedirect(auth, googleProvider);
+  return signInWithPopup(auth, googleProvider);
 };
 
 export const signOut = () => {
