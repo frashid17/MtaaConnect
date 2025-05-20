@@ -24,6 +24,8 @@ import {
   type InsertAlert,
   type InsertComment
 } from "@shared/schema";
+import { db } from "./db";
+import { eq, desc, and, or, like, sql } from "drizzle-orm";
 
 export interface IStorage {
   // User operations
@@ -333,4 +335,204 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+export class DatabaseStorage implements IStorage {
+  // User operations
+  async getUser(id: number): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const [user] = await db.insert(users).values(insertUser).returning();
+    return user;
+  }
+
+  async updateUserVerification(id: number, verified: boolean): Promise<User | undefined> {
+    const [updatedUser] = await db
+      .update(users)
+      .set({ verified })
+      .where(eq(users.id, id))
+      .returning();
+    return updatedUser;
+  }
+
+  // Event operations
+  async getEvents(limit = 10, offset = 0): Promise<Event[]> {
+    return await db
+      .select()
+      .from(events)
+      .orderBy(desc(events.createdAt))
+      .limit(limit)
+      .offset(offset);
+  }
+
+  async getEvent(id: number): Promise<Event | undefined> {
+    const [event] = await db.select().from(events).where(eq(events.id, id));
+    return event;
+  }
+
+  async createEvent(insertEvent: InsertEvent): Promise<Event> {
+    const [event] = await db.insert(events).values(insertEvent).returning();
+    return event;
+  }
+
+  // Ticket operations
+  async getTicketsByEvent(eventId: number): Promise<Ticket[]> {
+    return await db.select().from(tickets).where(eq(tickets.eventId, eventId));
+  }
+
+  async getTicketsByUser(userId: number): Promise<Ticket[]> {
+    return await db.select().from(tickets).where(eq(tickets.userId, userId));
+  }
+
+  async createTicket(insertTicket: InsertTicket): Promise<Ticket> {
+    const [ticket] = await db.insert(tickets).values(insertTicket).returning();
+    return ticket;
+  }
+
+  // Harambee operations
+  async getHarambees(limit = 10, offset = 0): Promise<Harambee[]> {
+    return await db
+      .select()
+      .from(harambees)
+      .orderBy(desc(harambees.createdAt))
+      .limit(limit)
+      .offset(offset);
+  }
+
+  async getHarambee(id: number): Promise<Harambee | undefined> {
+    const [harambee] = await db.select().from(harambees).where(eq(harambees.id, id));
+    return harambee;
+  }
+
+  async createHarambee(insertHarambee: InsertHarambee): Promise<Harambee> {
+    const harambeeWithRaisedAmount = {
+      ...insertHarambee,
+      raisedAmount: 0
+    };
+    const [harambee] = await db.insert(harambees).values(harambeeWithRaisedAmount).returning();
+    return harambee;
+  }
+
+  async updateHarambeeAmount(id: number, amount: number): Promise<Harambee | undefined> {
+    const harambee = await this.getHarambee(id);
+    if (!harambee) return undefined;
+    
+    const newAmount = (harambee.raisedAmount || 0) + amount;
+    
+    const [updatedHarambee] = await db
+      .update(harambees)
+      .set({ raisedAmount: newAmount })
+      .where(eq(harambees.id, id))
+      .returning();
+    
+    return updatedHarambee;
+  }
+
+  // Contribution operations
+  async getContributionsByHarambee(harambeeId: number): Promise<Contribution[]> {
+    return await db.select().from(contributions).where(eq(contributions.harambeeId, harambeeId));
+  }
+
+  async getContributionsByUser(userId: number): Promise<Contribution[]> {
+    return await db.select().from(contributions).where(eq(contributions.userId, userId));
+  }
+
+  async createContribution(insertContribution: InsertContribution): Promise<Contribution> {
+    const [contribution] = await db.insert(contributions).values(insertContribution).returning();
+    
+    // Update harambee amount
+    await this.updateHarambeeAmount(
+      insertContribution.harambeeId, 
+      insertContribution.amount
+    );
+    
+    return contribution;
+  }
+
+  // Rental operations
+  async getRentals(category?: string, limit = 10, offset = 0): Promise<Rental[]> {
+    if (category && category !== 'All') {
+      return await db
+        .select()
+        .from(rentals)
+        .where(eq(rentals.category, category))
+        .orderBy(desc(rentals.createdAt))
+        .limit(limit)
+        .offset(offset);
+    }
+    
+    return await db
+      .select()
+      .from(rentals)
+      .orderBy(desc(rentals.createdAt))
+      .limit(limit)
+      .offset(offset);
+  }
+
+  async getRental(id: number): Promise<Rental | undefined> {
+    const [rental] = await db.select().from(rentals).where(eq(rentals.id, id));
+    return rental;
+  }
+
+  async createRental(insertRental: InsertRental): Promise<Rental> {
+    const [rental] = await db.insert(rentals).values(insertRental).returning();
+    return rental;
+  }
+
+  // Alert operations
+  async getAlerts(type?: string, limit = 10, offset = 0): Promise<Alert[]> {
+    if (type && type !== 'All') {
+      return await db
+        .select()
+        .from(alerts)
+        .where(eq(alerts.type, type))
+        .orderBy(desc(alerts.createdAt))
+        .limit(limit)
+        .offset(offset);
+    }
+    
+    return await db
+      .select()
+      .from(alerts)
+      .orderBy(desc(alerts.createdAt))
+      .limit(limit)
+      .offset(offset);
+  }
+
+  async getAlert(id: number): Promise<Alert | undefined> {
+    const [alert] = await db.select().from(alerts).where(eq(alerts.id, id));
+    return alert;
+  }
+
+  async createAlert(insertAlert: InsertAlert): Promise<Alert> {
+    const [alert] = await db.insert(alerts).values(insertAlert).returning();
+    return alert;
+  }
+
+  // Comment operations
+  async getCommentsByAlert(alertId: number): Promise<Comment[]> {
+    return await db
+      .select()
+      .from(comments)
+      .where(eq(comments.alertId, alertId))
+      .orderBy(comments.createdAt);
+  }
+
+  async createComment(insertComment: InsertComment): Promise<Comment> {
+    const [comment] = await db.insert(comments).values(insertComment).returning();
+    return comment;
+  }
+}
+
+export const storage = new DatabaseStorage();

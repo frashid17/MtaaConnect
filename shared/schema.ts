@@ -1,6 +1,7 @@
 import { pgTable, text, serial, integer, boolean, timestamp, json } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+import { relations } from "drizzle-orm";
 
 // Users Table
 export const users = pgTable("users", {
@@ -121,6 +122,91 @@ export const insertRentalSchema = createInsertSchema(rentals).omit({ id: true, c
 export const insertAlertSchema = createInsertSchema(alerts).omit({ id: true, createdAt: true });
 
 export const insertCommentSchema = createInsertSchema(comments).omit({ id: true, createdAt: true });
+
+// Relations
+export const usersRelations = relations(users, ({ many }) => ({
+  events: many(events, { relationName: "user_events" }),
+  tickets: many(tickets, { relationName: "user_tickets" }),
+  harambees: many(harambees, { relationName: "user_harambees" }),
+  contributions: many(contributions, { relationName: "user_contributions" }),
+  rentals: many(rentals, { relationName: "user_rentals" }),
+  alerts: many(alerts, { relationName: "user_alerts" }),
+  comments: many(comments, { relationName: "user_comments" }),
+}));
+
+export const eventsRelations = relations(events, ({ one, many }) => ({
+  creator: one(users, {
+    fields: [events.createdBy],
+    references: [users.id],
+    relationName: "user_events"
+  }),
+  tickets: many(tickets, { relationName: "event_tickets" })
+}));
+
+export const ticketsRelations = relations(tickets, ({ one }) => ({
+  event: one(events, {
+    fields: [tickets.eventId],
+    references: [events.id],
+    relationName: "event_tickets"
+  }),
+  user: one(users, {
+    fields: [tickets.userId],
+    references: [users.id],
+    relationName: "user_tickets"
+  })
+}));
+
+export const harambeesRelations = relations(harambees, ({ one, many }) => ({
+  creator: one(users, {
+    fields: [harambees.createdBy],
+    references: [users.id],
+    relationName: "user_harambees"
+  }),
+  contributions: many(contributions, { relationName: "harambee_contributions" })
+}));
+
+export const contributionsRelations = relations(contributions, ({ one }) => ({
+  harambee: one(harambees, {
+    fields: [contributions.harambeeId],
+    references: [harambees.id],
+    relationName: "harambee_contributions"
+  }),
+  user: one(users, {
+    fields: [contributions.userId],
+    references: [users.id],
+    relationName: "user_contributions"
+  })
+}));
+
+export const rentalsRelations = relations(rentals, ({ one }) => ({
+  creator: one(users, {
+    fields: [rentals.createdBy],
+    references: [users.id],
+    relationName: "user_rentals"
+  })
+}));
+
+export const alertsRelations = relations(alerts, ({ one, many }) => ({
+  creator: one(users, {
+    fields: [alerts.createdBy],
+    references: [users.id],
+    relationName: "user_alerts"
+  }),
+  comments: many(comments, { relationName: "alert_comments" })
+}));
+
+export const commentsRelations = relations(comments, ({ one }) => ({
+  alert: one(alerts, {
+    fields: [comments.alertId],
+    references: [alerts.id],
+    relationName: "alert_comments"
+  }),
+  user: one(users, {
+    fields: [comments.userId],
+    references: [users.id],
+    relationName: "user_comments"
+  })
+}));
 
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
