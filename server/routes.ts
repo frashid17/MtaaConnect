@@ -15,6 +15,7 @@ import { ZodError } from "zod";
 import { z } from "zod";
 import { fromZodError } from "zod-validation-error";
 import { randomBytes } from "crypto";
+import { authenticateToken } from "./middleware/auth";
 
 // Helper function to handle zod validation errors
 function validateData<T>(schema: z.ZodSchema<T>, data: unknown): T {
@@ -31,6 +32,9 @@ function validateData<T>(schema: z.ZodSchema<T>, data: unknown): T {
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
+  
+  // Apply authentication middleware to all routes
+  app.use(authenticateToken);
 
   // User Authentication Routes
   app.post("/api/auth/register", async (req: Request, res: Response) => {
