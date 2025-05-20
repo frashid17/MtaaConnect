@@ -6,13 +6,7 @@ import { storage } from "../storage";
 if (!admin.apps.length) {
   admin.initializeApp({
     projectId: process.env.VITE_FIREBASE_PROJECT_ID,
-    credential: admin.credential.cert({
-      projectId: process.env.VITE_FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL || undefined,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY 
-        ? process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n')
-        : undefined,
-    }),
+    // Use default credential when no service account is provided
   });
 }
 
@@ -56,7 +50,7 @@ export const authenticateToken = async (
         dbUser = await storage.createUser({
           username: decodedToken.email.split("@")[0],
           email: decodedToken.email,
-          password: "", // OAuth users don't need passwords
+          // No password needed for OAuth users
           displayName: decodedToken.name || null,
           photoURL: decodedToken.picture || null,
           phoneNumber: decodedToken.phone_number || null,

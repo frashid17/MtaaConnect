@@ -100,14 +100,18 @@ export const comments = pgTable("comments", {
 });
 
 // Insert schemas
-export const insertUserSchema = createInsertSchema(users).pick({
-  username: true,
-  password: true,
-  email: true,
-  displayName: true,
-  photoURL: true,
-  phoneNumber: true,
-});
+// Create base schema with optional password
+export const insertUserSchema = createInsertSchema(users)
+  .pick({
+    username: true,
+    password: true,
+    email: true,
+    displayName: true,
+    photoURL: true,
+    phoneNumber: true,
+    verified: true,
+  })
+  .partial({ password: true }); // Make password optional for social login
 
 export const insertEventSchema = createInsertSchema(events).omit({ id: true, createdAt: true });
 

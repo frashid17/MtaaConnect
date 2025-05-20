@@ -61,7 +61,7 @@ export default function CreateEventModal({
       location: "",
       price: 0,
       imageUrl: "",
-      createdBy: currentUser?.uid ? parseInt(currentUser.uid) : 1, // Fallback to user ID 1
+      // We'll set createdBy on the server using the authentication token
     },
   });
 
@@ -69,9 +69,7 @@ export default function CreateEventModal({
     setIsSubmitting(true);
     
     try {
-      // Update createdBy with current user ID
-      values.createdBy = currentUser?.uid ? parseInt(currentUser.uid) : 1;
-      
+      // The createdBy will be set on the server based on the auth token
       await apiRequest("POST", "/api/events", values);
       
       toast({
