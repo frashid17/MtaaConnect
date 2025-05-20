@@ -92,8 +92,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.post("/api/events", async (req: Request, res: Response) => {
     try {
+      if (!req.user || !req.user.databaseId) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+      
       const eventData = validateData(insertEventSchema, req.body);
-      const newEvent = await storage.createEvent(eventData);
+      
+      // Set the creator ID to the authenticated user
+      const newEvent = await storage.createEvent({
+        ...eventData,
+        createdBy: req.user.databaseId
+      });
+      
       res.status(201).json(newEvent);
     } catch (error) {
       res.status(400).json({ message: error instanceof Error ? error.message : "Invalid event data" });
@@ -169,8 +179,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.post("/api/harambees", async (req: Request, res: Response) => {
     try {
+      if (!req.user || !req.user.databaseId) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+      
       const harambeeData = validateData(insertHarambeeSchema, req.body);
-      const newHarambee = await storage.createHarambee(harambeeData);
+      
+      // Set the creator ID to the authenticated user
+      const newHarambee = await storage.createHarambee({
+        ...harambeeData,
+        createdBy: req.user.databaseId
+      });
+      
       res.status(201).json(newHarambee);
     } catch (error) {
       res.status(400).json({ message: error instanceof Error ? error.message : "Invalid harambee data" });
@@ -233,8 +253,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.post("/api/rentals", async (req: Request, res: Response) => {
     try {
+      if (!req.user || !req.user.databaseId) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+      
       const rentalData = validateData(insertRentalSchema, req.body);
-      const newRental = await storage.createRental(rentalData);
+      
+      // Set the creator ID to the authenticated user
+      const newRental = await storage.createRental({
+        ...rentalData,
+        createdBy: req.user.databaseId
+      });
+      
       res.status(201).json(newRental);
     } catch (error) {
       res.status(400).json({ message: error instanceof Error ? error.message : "Invalid rental data" });

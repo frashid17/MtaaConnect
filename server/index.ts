@@ -1,10 +1,14 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { authenticateToken } from "./middleware/auth";
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// Apply authentication middleware to all API routes
+app.use('/api', authenticateToken);
 
 app.use((req, res, next) => {
   const start = Date.now();
