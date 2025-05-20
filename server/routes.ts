@@ -302,8 +302,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.post("/api/alerts", async (req: Request, res: Response) => {
     try {
+      if (!req.user || !req.user.databaseId) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+      
       const alertData = validateData(insertAlertSchema, req.body);
-      const newAlert = await storage.createAlert(alertData);
+      
+      // Set the creator ID to the authenticated user
+      const newAlert = await storage.createAlert({
+        ...alertData,
+        createdBy: req.user.databaseId
+      });
+      
       res.status(201).json(newAlert);
     } catch (error) {
       res.status(400).json({ message: error instanceof Error ? error.message : "Invalid alert data" });
